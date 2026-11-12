@@ -87,7 +87,7 @@
       </div>
     </section>
 
-    <!-- БЛОК ВВОДА: ИИ (Текст + Фото) -->
+    <!-- БЛОК ВВОДА: ИИ (Текст + Фото + Память) -->
     <section class="card p-3.5 space-y-2.5">
       <div class="flex gap-1.5 overflow-x-auto scrollbar-none pb-0.5" id="mealTabs">
         <button onclick="selectMeal('breakfast')" data-meal="breakfast" class="meal-tab px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white shrink-0">🌅 Завтрак</button>
@@ -96,7 +96,15 @@
         <button onclick="selectMeal('dinner')" data-meal="dinner" class="meal-tab px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-700 text-slate-300 shrink-0">🌙 Ужин</button>
       </div>
 
-      <textarea id="foodInput" rows="2" placeholder="Например: котлеты из куриного фарша небольшие 3 шт (или прикрепи фото и напиши сколько съел)..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"></textarea>
+      <!-- Быстрые плашки памяти (Вчера / Частое) -->
+      <div id="recentChipsWrap" class="hidden space-y-1">
+        <div class="text-[10px] text-slate-400 flex items-center justify-between px-0.5">
+          <span>🕒 Быстрый повтор (из прошлых приемов):</span>
+        </div>
+        <div id="recentChipsList" class="flex gap-1.5 overflow-x-auto scrollbar-none pb-0.5"></div>
+      </div>
+
+      <textarea id="foodInput" rows="2" placeholder="Напиши, что съел, или прикрепи фото (ИИ помнит твои прошлые продукты)..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"></textarea>
 
       <div id="photoPreviewBox" class="hidden flex items-center justify-between bg-slate-900 px-3 py-2 rounded-lg border border-slate-700">
         <div class="flex items-center gap-2">
@@ -107,18 +115,36 @@
       </div>
 
       <div class="flex gap-2">
-        <label class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer shrink-0">
+        <label class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1 cursor-pointer shrink-0">
           <span>📷 Фото</span>
           <input type="file" id="photoInput" accept="image/*" class="hidden" onchange="handlePhotoSelect(event)">
         </label>
 
-        <button id="addAiBtn" onclick="addFoodWithAI()" class="btn-primary flex-1 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2">
-          <span id="addBtnText">✨ Посчитать и добавить</span>
+        <button id="suggestBtn" onclick="suggestMealsWithAI()" class="bg-slate-700 hover:bg-slate-600 text-amber-300 px-3 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1 shrink-0" title="Подобрать варианты под остаток КБЖУ">
+          <span id="suggestBtnText">💡 Что съесть?</span>
         </button>
+
+        <button id="addAiBtn" onclick="addFoodWithAI()" class="btn-primary flex-1 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5">
+          <span id="addBtnText">✨ Посчитать</span>
+        </button>
+      </div>
+
+      <!-- Блок рекомендаций ИИ под остаток -->
+      <div id="suggestionsBox" class="hidden bg-slate-900/90 border border-slate-700 rounded-xl p-2.5 space-y-2">
+        <div class="flex justify-between items-center">
+          <span class="text-[11px] font-semibold text-amber-300">💡 Варианты под твой остаток БЖУ:</span>
+          <button onclick="document.getElementById('suggestionsBox').classList.add('hidden')" class="text-slate-400 text-xs px-1">✕</button>
+        </div>
+        <div id="suggestionsList" class="space-y-1.5"></div>
       </div>
 
       <div id="aiErrorBox" class="hidden text-xs text-red-400 bg-red-950/50 border border-red-800/60 rounded-lg p-2.5"></div>
     </section>
+
+    <!-- Подсказка про редактирование -->
+    <div class="text-[11px] text-slate-400 text-center px-2">
+      💡 Нажми на любую запись в списке, чтобы изменить граммовку или КБЖУ
+    </div>
 
     <!-- ТЕКУЩИЙ ДЕНЬ -->
     <section class="space-y-2.5" id="mealsContainer"></section>
@@ -139,6 +165,72 @@
       <div id="historyContainer" class="space-y-2"></div>
     </section>
 
+  </div>
+
+  <!-- МОДАЛКА РЕДАКТИРОВАНИЯ ПРОДУКТА И ГРАММОВКИ -->
+  <div id="editItemModal" class="hidden fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4">
+    <div class="card max-w-md w-full p-4 space-y-3.5 bg-slate-800">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-base">✏️ Изменить запись</h3>
+        <button onclick="closeModal('editItemModal')" class="text-slate-400 text-lg px-2">✕</button>
+      </div>
+
+      <input type="hidden" id="editItemId">
+
+      <div>
+        <label class="text-[11px] text-slate-400">Название и количество</label>
+        <input type="text" id="editItemName" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm mt-1 text-white">
+      </div>
+
+      <!-- Быстрый пересчет по граммам / порции -->
+      <div class="bg-slate-900/80 border border-slate-700/80 rounded-xl p-2.5 space-y-2">
+        <div class="text-[11px] text-sky-400 font-semibold">⚖️ Пропорциональный пересчет по весу:</div>
+        <div class="grid grid-cols-2 gap-2 items-center">
+          <div>
+            <label class="text-[10px] text-slate-400">Исходный вес (г / шт)</label>
+            <input type="number" step="any" id="editBaseWeight" oninput="recalcEditByWeight()" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-1.5 text-xs mt-0.5">
+          </div>
+          <div>
+            <label class="text-[10px] text-emerald-400 font-semibold">Новый вес (г / шт)</label>
+            <input type="number" step="any" id="editNewWeight" oninput="recalcEditByWeight()" placeholder="Введи новый вес..." class="w-full bg-slate-800 border border-emerald-600/70 rounded-lg p-1.5 text-xs mt-0.5 text-white font-bold">
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-4 gap-2">
+        <div>
+          <label class="text-[11px] text-slate-400">Ккал</label>
+          <input type="number" id="editItemKcal" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm mt-1">
+        </div>
+        <div>
+          <label class="text-[11px] text-slate-400">Белки (г)</label>
+          <input type="number" id="editItemP" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm mt-1">
+        </div>
+        <div>
+          <label class="text-[11px] text-slate-400">Жиры (г)</label>
+          <input type="number" id="editItemF" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm mt-1">
+        </div>
+        <div>
+          <label class="text-[11px] text-slate-400">Углев (г)</label>
+          <input type="number" id="editItemC" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm mt-1">
+        </div>
+      </div>
+
+      <div>
+        <label class="text-[11px] text-slate-400">Прием пищи</label>
+        <select id="editItemMeal" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs mt-1 text-slate-200">
+          <option value="breakfast">🌅 Завтрак</option>
+          <option value="snack">🍏 Перекус</option>
+          <option value="lunch">🍲 Обед</option>
+          <option value="dinner">🌙 Ужин</option>
+        </select>
+      </div>
+
+      <div class="flex gap-2 pt-1">
+        <button onclick="deleteFromEditModal()" class="bg-red-950/80 hover:bg-red-900 text-red-300 px-3.5 py-2.5 rounded-xl text-xs font-semibold">Удалить</button>
+        <button onclick="saveEditedItem()" class="btn-primary flex-1 py-2.5 rounded-xl text-xs font-semibold">Сохранить изменения</button>
+      </div>
+    </div>
   </div>
 
   <!-- МОДАЛКА 1: ВЕС И ЦЕЛЬ -->
@@ -222,7 +314,6 @@
         <button onclick="closeModal('settingsModal')" class="text-slate-400 text-lg px-2">✕</button>
       </div>
 
-      <!-- API Ключ -->
       <div class="space-y-2">
         <label class="text-xs text-slate-300 font-semibold">Ключ Gemini API (Google AI Studio)</label>
         <input type="password" id="inpApiKey" placeholder="AIzaSy..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm">
@@ -232,13 +323,11 @@
         <div id="keyTestResult" class="text-xs hidden p-2.5 rounded-lg leading-relaxed"></div>
       </div>
 
-      <!-- Выбор модели (появляется после проверки ключа) -->
       <div id="modelSelectBox" class="hidden space-y-1.5 border-t border-slate-700 pt-3">
         <label class="text-xs text-slate-300 font-semibold">Активная модель ИИ:</label>
         <select id="selModel" onchange="changeSelectedModel()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200"></select>
       </div>
 
-      <!-- Настройка отображения -->
       <div class="border-t border-slate-700 pt-3 space-y-2">
         <label class="flex items-center justify-between cursor-pointer">
           <span class="text-xs text-slate-300">Показывать остаток КБЖУ после каждого продукта</span>
@@ -246,7 +335,6 @@
         </label>
       </div>
 
-      <!-- Фундамент обновлений и резервных копий -->
       <div class="border-t border-slate-700 pt-3 space-y-2">
         <div class="text-xs text-slate-400 font-semibold">Обновление и сохранность данных</div>
         <button onclick="forceUpdateApp()" class="w-full bg-slate-700 hover:bg-slate-600 py-2.5 rounded-lg text-xs font-semibold text-sky-300">
@@ -267,7 +355,7 @@
   <div id="toast" class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-xl z-50"></div>
 
   <script>
-    const APP_VERSION = "1.1.0";
+    const APP_VERSION = "1.2.0";
     const STORAGE_KEY = "kcal_tracker_state_v1";
 
     const MEAL_TYPES = [
@@ -304,6 +392,7 @@
 
     let state = loadState();
     let attachedPhotoBase64 = null;
+    let editOriginalItem = null;
 
     function loadState() {
       try {
@@ -343,6 +432,93 @@
           btn.className = "meal-tab px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-700 text-slate-300 shrink-0";
         }
       });
+      renderRecentChips();
+    }
+
+    // Сбор памяти продуктов из прошлых дней и сегодняшнего дня
+    function getMemoryItems(preferMealId = null) {
+      const all = [];
+      // Сначала вчерашние и прошлые дни
+      (state.history || []).forEach((day, idx) => {
+        (day.items || []).forEach(it => {
+          all.push({ ...it, fromYesterday: idx === 0 });
+        });
+      });
+      // Плюс сегодняшние (для быстрого повтора или контекста ИИ)
+      (state.today.items || []).forEach(it => {
+        all.push({ ...it, fromToday: true });
+      });
+
+      const seen = new Set();
+      const unique = [];
+      for (const it of all) {
+        const key = (it.name || "").trim().toLowerCase();
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        unique.push(it);
+      }
+
+      if (preferMealId) {
+        unique.sort((a, b) => {
+          const aMatch = a.meal === preferMealId ? 1 : 0;
+          const bMatch = b.meal === preferMealId ? 1 : 0;
+          if (bMatch !== aMatch) return bMatch - aMatch;
+          return (b.fromYesterday ? 1 : 0) - (a.fromYesterday ? 1 : 0);
+        });
+      }
+      return unique;
+    }
+
+    function renderRecentChips() {
+      const wrap = document.getElementById("recentChipsWrap");
+      const listEl = document.getElementById("recentChipsList");
+      const mem = getMemoryItems(state.currentMeal).slice(0, 8);
+
+      if (mem.length === 0) {
+        wrap.classList.add("hidden");
+        return;
+      }
+
+      wrap.classList.remove("hidden");
+      listEl.innerHTML = mem.map((it, idx) => {
+        const tag = it.fromYesterday ? "вчера" : "";
+        return `
+          <button onclick="quickAddFromMemory(${idx})" class="bg-slate-800 hover:bg-slate-700 border border-slate-600/80 rounded-lg px-2.5 py-1 text-[11px] text-slate-200 shrink-0 flex items-center gap-1.5">
+            <span class="text-blue-400 font-bold">+</span>
+            <span class="truncate max-w-[160px]">${escapeHtml(it.name)}</span>
+            <span class="text-slate-400">${Math.round(it.kcal)}к</span>
+            ${tag ? `<span class="text-[9px] bg-slate-700 text-amber-300 px-1 rounded">${tag}</span>` : ""}
+          </button>
+        `;
+      }).join("");
+    }
+
+    function quickAddFromMemory(idx) {
+      const mem = getMemoryItems(state.currentMeal).slice(0, 8);
+      const item = mem[idx];
+      if (!item) return;
+      state.today.items.push({
+        id: "id_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+        meal: state.currentMeal,
+        name: item.name,
+        kcal: Math.round(Number(item.kcal) || 0),
+        p: Math.round(Number(item.p) || 0),
+        f: Math.round(Number(item.f) || 0),
+        c: Math.round(Number(item.c) || 0)
+      });
+      saveState();
+      renderAll();
+      showToast("Добавлено: " + item.name);
+    }
+
+    function getTotals() {
+      return state.today.items.reduce((acc, it) => {
+        acc.kcal += Number(it.kcal) || 0;
+        acc.p += Number(it.p) || 0;
+        acc.f += Number(it.f) || 0;
+        acc.c += Number(it.c) || 0;
+        return acc;
+      }, { kcal: 0, p: 0, f: 0, c: 0 });
     }
 
     function renderAll() {
@@ -362,14 +538,7 @@
         kText.textContent = "Нет ключа";
       }
 
-      const totals = state.today.items.reduce((acc, it) => {
-        acc.kcal += Number(it.kcal) || 0;
-        acc.p += Number(it.p) || 0;
-        acc.f += Number(it.f) || 0;
-        acc.c += Number(it.c) || 0;
-        return acc;
-      }, { kcal: 0, p: 0, f: 0, c: 0 });
-
+      const totals = getTotals();
       const tKcal = state.profile.kcal;
       const tP = state.profile.p;
       const tF = state.profile.f;
@@ -400,6 +569,7 @@
       setRemBadge("remF", tF - totals.f);
       setRemBadge("remC", tC - totals.c);
 
+      renderRecentChips();
       renderMeals();
       renderHistory();
     }
@@ -436,9 +606,9 @@
           const remAfterItemC = Math.round(state.profile.c - runC);
 
           return `
-            <div class="border-t border-slate-700/70 py-2.5 px-3 grid grid-cols-12 gap-2 items-center">
+            <div class="border-t border-slate-700/70 py-2.5 px-3 grid grid-cols-12 gap-2 items-center hover:bg-slate-800/50 active:bg-slate-800 cursor-pointer" onclick="openEditItemModal('${item.id}')">
               <div class="col-span-6 pr-1">
-                <div class="text-xs font-medium text-slate-100 leading-snug">${escapeHtml(item.name)}</div>
+                <div class="text-xs font-medium text-slate-100 leading-snug">${escapeHtml(item.name)} <span class="text-[10px] text-slate-500">✎</span></div>
               </div>
               <div class="col-span-5 text-right">
                 <div class="text-xs font-bold text-white">${Math.round(ik)} ккал</div>
@@ -449,8 +619,8 @@
                   </div>
                 ` : ""}
               </div>
-              <div class="col-span-1 text-right">
-                <button onclick="deleteItem('${item.id}')" class="text-slate-500 hover:text-red-400 text-sm px-1">✕</button>
+              <div class="col-span-1 text-right" onclick="event.stopPropagation(); deleteItem('${item.id}')">
+                <button class="text-slate-500 hover:text-red-400 text-sm px-1">✕</button>
               </div>
             </div>
           `;
@@ -478,6 +648,77 @@
         `;
         container.appendChild(card);
       });
+    }
+
+    // РЕДАКТИРОВАНИЕ ГРАММОВКИ И ПРОДУКТА
+    function openEditItemModal(id) {
+      const item = state.today.items.find(i => i.id === id);
+      if (!item) return;
+      editOriginalItem = { ...item };
+
+      document.getElementById("editItemId").value = item.id;
+      document.getElementById("editItemName").value = item.name;
+      document.getElementById("editItemKcal").value = Math.round(item.kcal);
+      document.getElementById("editItemP").value = Math.round(item.p);
+      document.getElementById("editItemF").value = Math.round(item.f);
+      document.getElementById("editItemC").value = Math.round(item.c);
+      document.getElementById("editItemMeal").value = item.meal;
+
+      // Пытаемся автоматически найти граммы в названии (например "150 г" или "150г")
+      const weightMatch = item.name.match(/(\d+)\s*(г|гр|мл|шт)/i);
+      const baseW = weightMatch ? Number(weightMatch[1]) : 100;
+      document.getElementById("editBaseWeight").value = baseW;
+      document.getElementById("editNewWeight").value = "";
+
+      openModal("editItemModal");
+    }
+
+    function recalcEditByWeight() {
+      if (!editOriginalItem) return;
+      const baseW = Number(document.getElementById("editBaseWeight").value);
+      const newW = Number(document.getElementById("editNewWeight").value);
+      if (!baseW || !newW || baseW <= 0 || newW <= 0) return;
+
+      const ratio = newW / baseW;
+      document.getElementById("editItemKcal").value = Math.round(editOriginalItem.kcal * ratio);
+      document.getElementById("editItemP").value = Math.round(editOriginalItem.p * ratio);
+      document.getElementById("editItemF").value = Math.round(editOriginalItem.f * ratio);
+      document.getElementById("editItemC").value = Math.round(editOriginalItem.c * ratio);
+
+      // Обновляем граммы в названии, если они там были
+      const currentName = editOriginalItem.name;
+      if (/(\d+)\s*(г|гр|мл|шт)/i.test(currentName)) {
+        document.getElementById("editItemName").value = currentName.replace(/(\d+)(\s*(?:г|гр|мл|шт))/i, `${newW}$2`);
+      } else {
+        document.getElementById("editItemName").value = `${currentName} (${newW} г)`;
+      }
+    }
+
+    function saveEditedItem() {
+      const id = document.getElementById("editItemId").value;
+      const idx = state.today.items.findIndex(i => i.id === id);
+      if (idx === -1) return;
+
+      state.today.items[idx] = {
+        ...state.today.items[idx],
+        name: document.getElementById("editItemName").value.trim() || "Продукт",
+        kcal: Math.round(Number(document.getElementById("editItemKcal").value) || 0),
+        p: Math.round(Number(document.getElementById("editItemP").value) || 0),
+        f: Math.round(Number(document.getElementById("editItemF").value) || 0),
+        c: Math.round(Number(document.getElementById("editItemC").value) || 0),
+        meal: document.getElementById("editItemMeal").value
+      };
+
+      saveState();
+      renderAll();
+      closeModal("editItemModal");
+      showToast("Запись обновлена!");
+    }
+
+    function deleteFromEditModal() {
+      const id = document.getElementById("editItemId").value;
+      deleteItem(id);
+      closeModal("editItemModal");
     }
 
     function deleteItem(id) {
@@ -516,7 +757,6 @@
       document.getElementById("photoPreviewBox").classList.add("hidden");
     }
 
-    // Автоматическое получение списка доступных моделей у Google API
     async function fetchAvailableModels(apiKey) {
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey.trim()}`);
       const data = await res.json();
@@ -574,22 +814,7 @@
       return JSON.parse(match[0]);
     }
 
-    async function callGeminiAPI(promptText, base64Image, apiKey) {
-      const parts = [{
-        text: `Ты точный калькулятор КБЖУ. Пользователь пишет, что он съел, и/или прикладывает фото еды или этикетки.
-Рассчитай КБЖУ каждого продукта. Если вес не указан, бери стандартную среднюю порцию (укажи примерный вес в скобках в названии).
-Верни ТОЛЬКО валидный JSON строго по схеме без пояснений:
-{"items": [{"name": "Название и количество/вес", "kcal": 250, "p": 25, "f": 12, "c": 10}]}
-Запрос пользователя: ${promptText || "Посчитай КБЖУ того, что на фото"}`
-      }];
-
-      if (base64Image) {
-        parts.push({
-          inline_data: { mime_type: "image/jpeg", data: base64Image }
-        });
-      }
-
-      // Если список моделей еще не загружен — запрашиваем его автоматически
+    async function runGeminiRequest(parts, apiKey) {
       if (!state.availableModels || state.availableModels.length === 0) {
         state.availableModels = await fetchAvailableModels(apiKey);
         state.selectedModel = state.availableModels[0];
@@ -616,6 +841,105 @@
       throw new Error(firstError || "Не удалось получить ответ от Gemini API");
     }
 
+    async function callGeminiAPI(promptText, base64Image, apiKey) {
+      const memItems = getMemoryItems().slice(0, 20).map(i => `${i.name} -> ${i.kcal}ккал (Б:${i.p}, Ж:${i.f}, У:${i.c})`).join("; ");
+      const memoryContext = memItems
+        ? `\nПамять прошлых записей пользователя (если он вводит такой же продукт, используй эти же пропорции и вес порции): ${memItems}.`
+        : "";
+
+      const parts = [{
+        text: `Ты точный калькулятор КБЖУ. Пользователь пишет, что он съел, и/или прикладывает фото еды или этикетки.
+Рассчитай КБЖУ каждого продукта. Обязательно укажи вес в граммах в названии (например: "Котлеты куриные 3 шт (180 г)").${memoryContext}
+Верни ТОЛЬКО валидный JSON строго по схеме без пояснений:
+{"items": [{"name": "Название и вес в г", "kcal": 250, "p": 25, "f": 12, "c": 10}]}
+Запрос пользователя: ${promptText || "Посчитай КБЖУ того, что на фото"}`
+      }];
+
+      if (base64Image) {
+        parts.push({
+          inline_data: { mime_type: "image/jpeg", data: base64Image }
+        });
+      }
+
+      return await runGeminiRequest(parts, apiKey);
+    }
+
+    // ИИ-подбор вариантов еды на остаток КБЖУ с учетом прошлых дней
+    async function suggestMealsWithAI() {
+      const errBox = document.getElementById("aiErrorBox");
+      errBox.classList.add("hidden");
+
+      if (!state.apiKey || state.apiKey.trim().length < 10) {
+        openModal("settingsModal");
+        return;
+      }
+
+      const totals = getTotals();
+      const remKcal = Math.max(0, Math.round(state.profile.kcal - totals.kcal));
+      const remP = Math.max(0, Math.round(state.profile.p - totals.p));
+      const remF = Math.max(0, Math.round(state.profile.f - totals.f));
+      const remC = Math.max(0, Math.round(state.profile.c - totals.c));
+
+      const memItems = getMemoryItems().slice(0, 25).map(i => `${i.name} (${i.kcal}ккал Б:${i.p} Ж:${i.f} У:${i.c})`).join("; ");
+      const mealTitle = MEAL_TYPES.find(m => m.id === state.currentMeal)?.title || "Прием пищи";
+
+      const btn = document.getElementById("suggestBtn");
+      const btnText = document.getElementById("suggestBtnText");
+      btn.disabled = true;
+      btnText.textContent = "⏳ Думаю...";
+
+      try {
+        const parts = [{
+          text: `Пользователь планирует прием пищи: "${mealTitle}".
+Остаток дневной нормы: ${remKcal} ккал, Белки: ${remP} г, Жиры: ${remF} г, Углеводы: ${remC} г.
+Его привычные продукты из прошлых дней: ${memItems || "куриная грудка, котлеты из куриного фарша, яйца, творог, гречка, овощи, ветчина, рыба"}.
+Предложи 3 практичных варианта приема пищи (опираясь прежде всего на его привычные продукты), которые отлично впишутся в этот остаток.
+Верни ТОЛЬКО валидный JSON по схеме:
+{"suggestions": [{"name": "Название и граммовка", "note": "Коротко почему подходит", "kcal": 350, "p": 35, "f": 12, "c": 20}]}`
+        }];
+
+        const res = await runGeminiRequest(parts, state.apiKey);
+        if (res && Array.isArray(res.suggestions)) {
+          window._lastSuggestions = res.suggestions;
+          const box = document.getElementById("suggestionsBox");
+          const list = document.getElementById("suggestionsList");
+          box.classList.remove("hidden");
+          list.innerHTML = res.suggestions.map((s, idx) => `
+            <div class="bg-slate-800 border border-slate-700 rounded-lg p-2 flex justify-between items-center gap-2">
+              <div>
+                <div class="text-xs font-semibold text-white">${escapeHtml(s.name)}</div>
+                <div class="text-[10px] text-slate-400">${Math.round(s.kcal)} ккал • Б:${Math.round(s.p)} Ж:${Math.round(s.f)} У:${Math.round(s.c)} — ${escapeHtml(s.note || "")}</div>
+              </div>
+              <button onclick="addSuggestedItem(${idx})" class="bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-semibold px-2.5 py-1.5 rounded-lg shrink-0">+ В дневник</button>
+            </div>
+          `).join("");
+        }
+      } catch (e) {
+        errBox.textContent = "Ошибка подбора: " + e.message;
+        errBox.classList.remove("hidden");
+      } finally {
+        btn.disabled = false;
+        btnText.textContent = "💡 Что съесть?";
+      }
+    }
+
+    function addSuggestedItem(idx) {
+      const s = (window._lastSuggestions || [])[idx];
+      if (!s) return;
+      state.today.items.push({
+        id: "id_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+        meal: state.currentMeal,
+        name: s.name,
+        kcal: Math.round(Number(s.kcal) || 0),
+        p: Math.round(Number(s.p) || 0),
+        f: Math.round(Number(s.f) || 0),
+        c: Math.round(Number(s.c) || 0)
+      });
+      saveState();
+      renderAll();
+      showToast("Добавлено: " + s.name);
+    }
+
     async function addFoodWithAI() {
       const text = document.getElementById("foodInput").value.trim();
       const errBox = document.getElementById("aiErrorBox");
@@ -635,7 +959,7 @@
       const btn = document.getElementById("addAiBtn");
       const btnText = document.getElementById("addBtnText");
       btn.disabled = true;
-      btnText.textContent = "⏳ Считаю КБЖУ...";
+      btnText.textContent = "⏳ Считаю...";
 
       try {
         const result = await callGeminiAPI(text, attachedPhotoBase64, state.apiKey);
@@ -662,7 +986,7 @@
         errBox.classList.remove("hidden");
       } finally {
         btn.disabled = false;
-        btnText.textContent = "✨ Посчитать и добавить";
+        btnText.textContent = "✨ Посчитать";
       }
     }
 
@@ -671,9 +995,7 @@
         showToast("Сегодня еще нет записей");
         return;
       }
-      const totals = state.today.items.reduce((a, b) => ({
-        kcal: a.kcal + b.kcal, p: a.p + b.p, f: a.f + b.f, c: a.c + b.c
-      }), { kcal: 0, p: 0, f: 0, c: 0 });
+      const totals = getTotals();
 
       state.history.unshift({
         id: "day_" + Date.now(),
@@ -699,13 +1021,16 @@
         box.innerHTML = `<div class="text-xs text-slate-500 px-1">Завершенных дней пока нет.</div>`;
         return;
       }
-      box.innerHTML = state.history.map(day => {
+      box.innerHTML = state.history.map((day, dIdx) => {
         const diff = day.targetKcal - day.totals.kcal;
         const badgeColor = diff >= 0 ? "text-emerald-400" : "text-amber-400";
-        const itemsList = day.items.map(i =>
-          `<div class="flex justify-between py-1 border-b border-slate-700/50 text-xs">
+        const itemsList = day.items.map((i, iIdx) =>
+          `<div class="flex justify-between items-center py-1.5 border-b border-slate-700/50 text-xs gap-2">
             <span class="text-slate-300">${escapeHtml(i.name)}</span>
-            <span class="text-slate-400 shrink-0 ml-2">${i.kcal} ккал (Б:${i.p} Ж:${i.f} У:${i.c})</span>
+            <div class="flex items-center gap-2 shrink-0">
+              <span class="text-slate-400">${i.kcal} ккал (Б:${i.p} Ж:${i.f} У:${i.c})</span>
+              <button onclick="repeatFromHistory(${dIdx}, ${iIdx})" class="bg-slate-700 hover:bg-blue-600 text-[10px] text-sky-300 hover:text-white px-2 py-0.5 rounded font-semibold" title="Повторить сегодня">+ Сегодня</button>
+            </div>
           </div>`
         ).join("");
 
@@ -729,10 +1054,25 @@
       }).join("");
     }
 
+    function repeatFromHistory(dayIdx, itemIdx) {
+      const item = state.history?.[dayIdx]?.items?.[itemIdx];
+      if (!item) return;
+      state.today.items.push({
+        id: "id_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+        meal: item.meal || state.currentMeal,
+        name: item.name,
+        kcal: Math.round(Number(item.kcal) || 0),
+        p: Math.round(Number(item.p) || 0),
+        f: Math.round(Number(item.f) || 0),
+        c: Math.round(Number(item.c) || 0)
+      });
+      saveState();
+      renderAll();
+      showToast("Повторено: " + item.name);
+    }
+
     function copyDayForSheets() {
-      const totals = state.today.items.reduce((a, b) => ({
-        kcal: a.kcal + b.kcal, p: a.p + b.p, f: a.f + b.f, c: a.c + b.c
-      }), { kcal: 0, p: 0, f: 0, c: 0 });
+      const totals = getTotals();
       const names = state.today.items.map(i => i.name).join("; ");
       const row = `${state.today.date}\t${Math.round(totals.kcal)}\t${Math.round(totals.p)}\t${Math.round(totals.f)}\t${Math.round(totals.c)}\t${state.profile.weight}\t${names}`;
       navigator.clipboard.writeText(row).then(() => {
