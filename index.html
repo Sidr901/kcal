@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="КБЖУ Дневник">
+<title>КБЖУ Дневник</title>
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--dark:#0f172a;--brd:#334155;--txt:#f8fafc;--mut:#94a3b8;--dim:#64748b;--blu:#2563eb;--em:#34d399;--amb:#fbbf24;--red:#f87171;--sky:#38bdf8}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 36px);min-height:100vh;line-height:1.35}
+button,input,select{font-family:inherit;color:inherit}
+button{cursor:pointer;border:none;background:none}
+button:active{opacity:.75}
+button:disabled{opacity:.5;pointer-events:none}
+.wrap{max-width:560px;margin:0 auto;padding:12px 12px 0;display:flex;flex-direction:column;gap:12px}
+.card{background:var(--card);border:1px solid var(--brd);border-radius:14px}
+.hidden{display:none!important}
+.hdr{position:sticky;top:8px;z-index:30;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;background:rgba(30,41,59,.95);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 8px 20px rgba(0,0,0,.35)}
+.pill{background:#334155;padding:7px 11px;border-radius:9px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.d-r{background:#ef4444}.d-g{background:var(--em)}.d-a{background:var(--amb)}
+.dash{padding:14px;display:flex;flex-direction:column;gap:10px}
+.row-sb{display:flex;justify-content:space-between;align-items:center}
+.lbl{font-size:11px;color:var(--mut);text-transform:uppercase}
+.big{font-size:24px;font-weight:800;margin-top:2px}
+.bar-bg{width:100%;height:8px;background:#334155;border-radius:99px;overflow:hidden}
+.bar-fg{height:100%;background:#3b82f6;transition:width .25s}
+.bar-fg.over{background:#ef4444}
+.g2{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.mbox{background:rgba(15,23,42,.6);border:1px solid rgba(51,65,85,.7);padding:8px 6px;border-radius:10px;text-align:center}
+.tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:7px 12px;border-radius:9px;font-size:12px;font-weight:600;background:#334155;color:#cbd5e1;white-space:nowrap;flex-shrink:0}
+.tab.active{background:var(--blu);color:#fff}
+.chip{background:#0f172a;border:1px solid #475569;border-radius:8px;padding:5px 9px;font-size:11px;color:#e2e8f0;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;flex-shrink:0}
+.inp{width:100%;background:var(--dark);border:1px solid var(--brd);border-radius:10px;padding:10px 12px;font-size:14px;color:#fff;outline:none}
+.btn{padding:10px 12px;border-radius:11px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:5px}
+.b-sec{background:#334155;color:#e2e8f0}.b-pri{background:var(--blu);color:#fff}.b-em{background:#059669;color:#fff}.b-red{background:rgba(127,29,29,.7);color:#fca5a5}
+.m-hdr{background:rgba(15,23,42,.45);padding:8px 12px;display:flex;justify-content:space-between;align-items:center}
+.i-row{border-top:1px solid rgba(51,65,85,.65);padding:9px 12px;display:grid;grid-template-columns:1fr auto 24px;gap:8px;align-items:center;cursor:pointer}
+.m-ftr{background:rgba(15,23,42,.75);border-top:1px solid rgba(51,65,85,.85);padding:6px 12px;display:flex;justify-content:space-between;align-items:center;font-size:11px;flex-wrap:wrap;gap:4px}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:50;display:flex;align-items:center;justify-content:center;padding:14px}
+.modal{width:100%;max-width:440px;max-height:90vh;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.t-em{color:var(--em)}.t-amb{color:var(--amb)}.t-red{color:var(--red)}.t-blu{color:#60a5fa}.t-sky{color:var(--sky)}.t-mut{color:var(--mut)}.t-dim{color:var(--dim)}
+.xs{font-size:12px}.xxs{font-size:11px}.b{font-weight:700}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#059669;color:#fff;font-size:12px;font-weight:600;padding:10px 16px;border-radius:11px;z-index:60;white-space:nowrap}
+details>summary{list-style:none;cursor:pointer}details>summary::-webkit-details-marker{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="card hdr">
+    <button onclick="openModal('goalModal')" class="pill">
+      <span>⚖️ <span id="hdrWeight">99.0</span> кг</span><span class="t-dim">|</span><span id="hdrGoalName" class="t-blu">Дефицит</span>
+    </button>
+    <button onclick="openModal('settingsModal')" class="pill">
+      <span id="keyDot" class="dot d-r"></span><span id="keyStatusText">Нет ключа</span><span>⚙️</span>
+    </button>
+  </header>
+
+  <div id="newDayBanner" class="card hidden" style="padding:10px 12px;border-color:#fbbf24;display:flex;flex-direction:column;gap:8px">
+    <div class="xs">📅 Обнаружены записи за <b id="bannerOldDate" class="t-amb"></b>. Свернуть их в архив и открыть сегодня?</div>
+    <div style="display:flex;gap:8px">
+      <button onclick="finishAndCollapseDay()" class="btn b-em" style="flex:1;padding:7px">✅ Да, в архив</button>
+      <button onclick="keepOldItems()" class="btn b-sec" style="padding:7px 10px">Оставить датой сегодня</button>
+    </div>
+  </div>
+
+  <section class="card dash">
+    <div class="row-sb" style="align-items:flex-end">
+      <div>
+        <div class="lbl">Съедено (<span id="hdrDateLabel">сегодня</span>)</div>
+        <div class="big"><span id="totKcal">0</span> <span class="xs t-mut" style="font-weight:400">/ <span id="targetKcal">1900</span> ккал</span></div>
+      </div>
+      <div style="text-align:right">
+        <div class="lbl">Осталось</div>
+        <div id="remKcalBig" class="big t-em">1900 ккал</div>
+      </div>
+    </div>
+    <div class="bar-bg"><div id="kcalBar" class="bar-fg" style="width:0%"></div></div>
+    <div class="g3">
+      <div class="mbox"><div class="xxs t-mut">Белки (<span id="targetP">150</span>г)</div><div class="xs b" style="margin-top:2px"><span id="totP">0</span> г</div><div id="remP" class="xxs t-em">ост: 150 г</div></div>
+      <div class="mbox"><div class="xxs t-mut">Жиры (<span id="targetF">75</span>г)</div><div class="xs b" style="margin-top:2px"><span id="totF">0</span> г</div><div id="remF" class="xxs t-em">ост: 75 г</div></div>
+      <div class="mbox"><div class="xxs t-mut">Углеводы (<span id="targetC">155</span>г)</div><div class="xs b" style="margin-top:2px"><span id="totC">0</span> г</div><div id="remC" class="xxs t-em">ост: 155 г</div></div>
+    </div>
+  </section>
+
+  <section class="card dash">
+    <div class="tabs" id="mealTabs">
+      <button onclick="selectMeal('breakfast')" data-meal="breakfast" class="tab active">🌅 Завтрак</button>
+      <button onclick="selectMeal('snack')" data-meal="snack" class="tab">🍏 Перекус</button>
+      <button onclick="selectMeal('lunch')" data-meal="lunch" class="tab">🍲 Обед</button>
+      <button onclick="selectMeal('dinner')" data-meal="dinner" class="tab">🌙 Ужин</button>
+    </div>
+    <div id="recentChipsWrap" class="hidden" style="display:flex;flex-direction:column;gap:4px">
+      <div style="font-size:10px" class="t-mut">🕒 Быстрый повтор (1 касание):</div>
+      <div id="recentChipsList" class="tabs"></div>
+    </div>
+    <input type="text" id="foodInput" placeholder="Что съел? (например: 3 куриные котлеты)" class="inp">
+    <div id="photoPreviewBox" class="hidden row-sb" style="background:#0f172a;padding:7px 10px;border-radius:9px;border:1px solid #334155">
+      <div style="display:flex;align-items:center;gap:8px"><img id="photoPreviewImg" src="" style="width:36px;height:36px;object-fit:cover;border-radius:6px"><span class="xs t-mut">Фото готово</span></div>
+      <button onclick="clearPhoto()" class="xs t-red b">Удалить ×</button>
+    </div>
+    <div style="display:flex;gap:8px">
+      <label class="btn b-sec"><span>📷 Фото</span><input type="file" id="photoInput" accept="image/*" class="hidden" onchange="handlePhotoSelect(event)"></label>
+      <button id="suggestBtn" onclick="suggestMealsWithAI()" class="btn b-sec t-amb"><span id="suggestBtnText">💡 Что съесть?</span></button>
+      <button id="addAiBtn" onclick="addFoodWithAI()" class="btn b-pri" style="flex:1"><span id="addBtnText">✨ Посчитать</span></button>
+    </div>
+    <div id="suggestionsBox" class="hidden" style="background:#0f172a;border:1px solid #334155;border-radius:11px;padding:10px;display:flex;flex-direction:column;gap:8px">
+      <div class="row-sb"><span class="xxs b t-amb">💡 Варианты под остаток БЖУ:</span><button onclick="document.getElementById('suggestionsBox').classList.add('hidden')" class="t-mut xs">✕</button></div>
+      <div id="suggestionsList" style="display:flex;flex-direction:column;gap:6px"></div>
+    </div>
+    <div id="aiErrorBox" class="hidden xs t-red" style="background:rgba(127,29,29,.35);border:1px solid rgba(248,113,113,.4);border-radius:9px;padding:9px"></div>
+  </section>
+
+  <div class="xxs t-mut" style="text-align:center">💡 Нажми на любую запись в списке, чтобы изменить граммовку</div>
+  <section id="mealsContainer" style="display:flex;flex-direction:column;gap:10px"></section>
+
+  <section class="card" style="padding:11px;display:flex;gap:8px;flex-wrap:wrap">
+    <button onclick="copyDayForSheets()" class="btn b-sec" style="flex:1">📋 Скопировать</button>
+    <button onclick="finishAndCollapseDay()" class="btn b-em" style="flex:1">✅ Подбить день</button>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:8px;padding-top:4px">
+    <div class="lbl b" style="padding:0 4px">История дней</div>
+    <div id="historyContainer" style="display:flex;flex-direction:column;gap:8px"></div>
+  </section>
+</div>
+
+<div id="editItemModal" class="modal-bg hidden">
+  <div class="card modal">
+    <div class="row-sb"><h3 class="xs b" style="font-size:15px">✏️ Изменить запись</h3><button onclick="closeModal('editItemModal')" class="t-mut" style="font-size:18px">✕</button></div>
+    <input type="hidden" id="editItemId">
+    <div><label class="xxs t-mut">Название и вес</label><input type="text" id="editItemName" class="inp" style="margin-top:4px"></div>
+    <div style="background:#0f172a;border:1px solid #334155;border-radius:11px;padding:10px;display:flex;flex-direction:column;gap:6px">
+      <div class="xxs b t-sky">⚖️ Автопересчет по новой граммовке:</div>
+      <div class="g2">
+        <div><label class="xxs t-mut">Было (г/шт)</label><input type="number" step="any" id="editBaseWeight" oninput="recalcEditByWeight()" class="inp" style="margin-top:3px;padding:7px"></div>
+        <div><label class="xxs t-em b">Новый вес</label><input type="number" step="any" id="editNewWeight" oninput="recalcEditByWeight()" placeholder="Введи..." class="inp" style="margin-top:3px;padding:7px;border-color:#10b981;font-weight:700"></div>
+      </div>
+    </div>
+    <div class="g4">
+      <div><label class="xxs t-mut">Ккал</label><input type="number" id="editItemKcal" class="inp" style="margin-top:4px;padding:7px"></div>
+      <div><label class="xxs t-mut">Белки</label><input type="number" id="editItemP" class="inp" style="margin-top:4px;padding:7px"></div>
+      <div><label class="xxs t-mut">Жиры</label><input type="number" id="editItemF" class="inp" style="margin-top:4px;padding:7px"></div>
+      <div><label class="xxs t-mut">Углев</label><input type="number" id="editItemC" class="inp" style="margin-top:4px;padding:7px"></div>
+    </div>
+    <div><label class="xxs t-mut">Прием пищи</label>
+      <select id="editItemMeal" class="inp" style="margin-top:4px">
+        <option value="breakfast">🌅 Завтрак</option><option value="snack">🍏 Перекус</option><option value="lunch">🍲 Обед</option><option value="dinner">🌙 Ужин</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px"><button onclick="deleteFromEditModal()" class="btn b-red">Удалить</button><button onclick="saveEditedItem()" class="btn b-pri" style="flex:1">Сохранить</button></div>
+  </div>
+</div>
+
+<div id="goalModal" class="modal-bg hidden">
+  <div class="card modal">
+    <div class="row-sb"><h3 class="xs b" style="font-size:15px">Вес и Цель</h3><button onclick="closeModal('goalModal')" class="t-mut" style="font-size:18px">✕</button></div>
+    <div class="g3">
+      <div><label class="xxs t-mut">Вес (кг)</label><input type="number" step="0.1" id="inpWeight" class="inp" style="margin-top:4px;padding:7px"></div>
+      <div><label class="xxs t-mut">Рост (см)</label><input type="number" id="inpHeight" class="inp" style="margin-top:4px;padding:7px"></div>
+      <div><label class="xxs t-mut">Возраст</label><input type="number" id="inpAge" class="inp" style="margin-top:4px;padding:7px"></div>
+    </div>
+    <div class="g2">
+      <button onclick="applyPreset('deficit')" class="card" style="padding:8px;text-align:left;background:#0f172a"><div class="xs b t-blu">Дефицит</div><div class="xxs t-mut">1900 • Б:150 Ж:75 У:155</div></button>
+      <button onclick="applyPreset('soft')" class="card" style="padding:8px;text-align:left;background:#0f172a"><div class="xs b t-sky">Мягкий</div><div class="xxs t-mut">2100 • Б:155 Ж:80 У:190</div></button>
+      <button onclick="applyPreset('maint')" class="card" style="padding:8px;text-align:left;background:#0f172a"><div class="xs b t-em">Поддержание</div><div class="xxs t-mut">2400 • Б:155 Ж:85 У:250</div></button>
+      <button onclick="recalcByFormula()" class="card" style="padding:8px;text-align:left;background:#0f172a"><div class="xs b t-amb">Авто под вес</div><div class="xxs t-mut">Миффлин -500 ккал</div></button>
+    </div>
+    <div class="g4">
+      <div><label class="xxs t-mut">Ккал</label><input type="number" id="inpKcal" class="inp" style="margin-top:4px;padding:7px"></div>
+      <div><label class="xxs t-mut">Белки</label><input type="number" id="inpP" class="inp" style="margin-top:4px;padding:7px"></div>
+      <div><label class="xxs t-mut">Жиры</label><input type="number" id="inpF" class="inp" style="margin-top:4px;padding:7px"></div>
+      <div><label class="xxs t-mut">Углев</label><input type="number" id="inpC" class="inp" style="margin-top:4px;padding:7px"></div>
+    </div>
+    <div><label class="xxs t-mut">Название цели</label><input type="text" id="inpGoalName" class="inp" style="margin-top:4px"></div>
+    <button onclick="saveGoalSettings()" class="btn b-pri">Сохранить</button>
+  </div>
+</div>
+
+<div id="settingsModal" class="modal-bg hidden">
+  <div class="card modal">
+    <div class="row-sb"><h3 class="xs b" style="font-size:15px">Настройки <span id="verBadge" class="xs t-em"></span></h3><button onclick="closeModal('settingsModal')" class="t-mut" style="font-size:18px">✕</button></div>
+    <div style="display:flex;flex-direction:column;gap:7px">
+      <div class="row-sb"><label class="xs b">Ключ Gemini API</label><a href="https://aistudio.google.com/apikey" target="_blank" class="xxs t-sky">Где взять ключ ↗</a></div>
+      <input type="password" id="inpApiKey" placeholder="AIzaSy..." class="inp">
+      <button onclick="saveAndTestApiKey()" class="btn b-pri">Сохранить и проверить ключ</button>
+      <div id="keyTestResult" class="hidden xs" style="padding:9px;border-radius:9px"></div>
+    </div>
+    <div id="modelSelectBox" class="hidden" style="border-top:1px solid #334155;padding-top:10px;display:flex;flex-direction:column;gap:5px">
+      <label class="xs b">Активная модель ИИ:</label>
+      <select id="selModel" onchange="changeSelectedModel()" class="inp" style="font-size:12px"></select>
+    </div>
+    <div style="border-top:1px solid #334155;padding-top:10px">
+      <label class="row-sb" style="cursor:pointer"><span class="xs">Остаток КБЖУ после каждого продукта</span><input type="checkbox" id="chkShowItemRem" onchange="toggleItemRem()" style="width:17px;height:17px;accent-color:#2563eb"></label>
+    </div>
+    <div style="border-top:1px solid #334155;padding-top:10px" class="xxs t-mut">
+      <div class="row-sb"><span>Занято памяти:</span><b id="storageSizeText" class="t-em">0 КБ / 5000 КБ</b></div>
+    </div>
+    <div style="border-top:1px solid #334155;padding-top:10px;display:flex;flex-direction:column;gap:8px">
+      <button onclick="restoreFromHistoryToday()" class="btn b-sec t-amb">↩️ Вернуть сегодняшний день из архива</button>
+      <button onclick="forceUpdateApp()" class="btn b-sec t-sky">🔄 Обновить версию приложения</button>
+      <div class="g2">
+        <button onclick="exportBackup()" class="btn b-sec">⬇️ Бэкап</button>
+        <label class="btn b-sec">⬆️ Восстановить<input type="file" accept=".json" class="hidden" onchange="importBackup(event)"></label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script>
+const APP_VERSION="1.3.3",STORAGE_KEY="kcal_tracker_state_v1";
+const MEAL_TYPES=[{id:"breakfast",title:"🌅 Завтрак"},{id:"snack",title:"🍏 Перекус"},{id:"lunch",title:"🍲 Обед"},{id:"dinner",title:"🌙 Ужин"}];
+const getTodayStr=()=>new Date().toLocaleDateString("ru-RU");
+const defaultState={version:APP_VERSION,apiKey:"",keyVerified:false,selectedModel:"",availableModels:[],showItemRemainder:true,profile:{weight:99,height:183,age:43,goalName:"Дефицит",kcal:1900,p:150,f:75,c:155},currentMeal:"breakfast",today:{date:getTodayStr(),items:[]},dictionary:[],history:[]};
+let state=loadState(),attachedPhotoBase64=null,editOriginalItem=null;
+
+function loadState(){
+  try{
+    const r=localStorage.getItem(STORAGE_KEY);
+    if(!r)return JSON.parse(JSON.stringify(defaultState));
+    const p=JSON.parse(r);
+    return{...JSON.parse(JSON.stringify(defaultState)),...p,profile:{...defaultState.profile,...(p.profile||{})},today:{...defaultState.today,...(p.today||{})},dictionary:Array.isArray(p.dictionary)?p.dictionary:[],history:Array.isArray(p.history)?p.history:[],version:APP_VERSION};
+  }catch(e){return JSON.parse(JSON.stringify(defaultState));}
+}
+function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
+function showToast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.remove("hidden");setTimeout(()=>t.classList.add("hidden"),2400);}
+
+function checkDayRollover(){
+  const now=getTodayStr(),b=document.getElementById("newDayBanner");
+  if(state.today.date!==now){
+    if(!state.today.items||!state.today.items.length){state.today.date=now;saveState();b.classList.add("hidden");}
+    else{document.getElementById("bannerOldDate").textContent=state.today.date;b.classList.remove("hidden");}
+  }else b.classList.add("hidden");
+  document.getElementById("hdrDateLabel").textContent=state.today.date;
+}
+function keepOldItems(){state.today.date=getTodayStr();saveState();checkDayRollover();showToast("Оставлено на сегодня");}
+
+function restoreFromHistoryToday(){
+  const now=getTodayStr(),idx=state.history.findIndex(d=>d.date===now);
+  if(idx===-1){showToast("В архиве нет "+now);return;}
+  const d=state.history.splice(idx,1)[0];
+  state.today={date:now,items:d.items||[]};
+  saveState();checkDayRollover();renderDashboardAndMeals();renderHistory();closeModal("settingsModal");showToast("Восстановлено!");
+}
+
+function rememberInDictionary(it){
+  if(!it||!it.name)return;
+  const k=it.name.trim().toLowerCase();
+  state.dictionary=(state.dictionary||[]).filter(d=>(d.name||"").trim().toLowerCase()!==k);
+  state.dictionary.unshift({name:it.name.trim(),meal:it.meal||state.currentMeal,kcal:Math.round(Number(it.kcal)||0),p:Math.round(Number(it.p)||0),f:Math.round(Number(it.f)||0),c:Math.round(Number(it.c)||0)});
+  if(state.dictionary.length>60)state.dictionary=state.dictionary.slice(0,60);
+}
+
+function getMemoryItems(mealId=null){
+  const all=[];
+  if(state.history?.[0]?.items)state.history[0].items.forEach(i=>all.push({...i,fromYesterday:true}));
+  (state.dictionary||[]).forEach(i=>all.push(i));
+  (state.history||[]).slice(1,10).forEach(d=>(d.items||[]).forEach(i=>all.push(i)));
+  (state.today.items||[]).forEach(i=>all.push(i));
+  const seen=new Set(),uniq=[];
+  for(const i of all){const k=(i.name||"").trim().toLowerCase();if(k&&!seen.has(k)){seen.add(k);uniq.push(i);}}
+  if(mealId)uniq.sort((a,b)=>((b.meal===mealId?1:0)-(a.meal===mealId?1:0))||((b.fromYesterday?1:0)-(a.fromYesterday?1:0)));
+  return uniq;
+}
+
+function selectMeal(m){
+  state.currentMeal=m;saveState();
+  document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.meal===m));
+  renderRecentChips();
+}
+
+function renderRecentChips(){
+  const w=document.getElementById("recentChipsWrap"),l=document.getElementById("recentChipsList"),mem=getMemoryItems(state.currentMeal).slice(0,8);
+  if(!mem.length){w.classList.add("hidden");return;}
+  w.classList.remove("hidden");
+  l.innerHTML=mem.map((it,idx)=>`<button onclick="quickAdd(${idx})" class="chip"><span class="t-blu b">+</span><span style="max-width:150px;overflow:hidden;text-overflow:ellipsis">${escapeHtml(it.name)}</span><span class="t-mut">${Math.round(it.kcal)}к</span>${it.fromYesterday?'<span class="t-amb" style="font-size:9px">вчера</span>':""}</button>`).join("");
+}
+
+function quickAdd(idx){
+  const it=getMemoryItems(state.currentMeal).slice(0,8)[idx];if(!it)return;
+  const n={id:"id_"+Date.now(),meal:state.currentMeal,name:it.name,kcal:Math.round(Number(it.kcal)||0),p:Math.round(Number(it.p)||0),f:Math.round(Number(it.f)||0),c:Math.round(Number(it.c)||0)};
+  state.today.items.push(n);rememberInDictionary(n);saveState();renderDashboardAndMeals();showToast("Добавлено: "+it.name);
+}
+
+function getTotals(){return state.today.items.reduce((a,i)=>({kcal:a.kcal+(Number(i.kcal)||0),p:a.p+(Number(i.p)||0),f:a.f+(Number(i.f)||0),c:a.c+(Number(i.c)||0)}),{kcal:0,p:0,f:0,c:0});}
+
+function renderDashboardAndMeals(){
+  document.getElementById("hdrWeight").textContent=Number(state.profile.weight).toFixed(1);
+  document.getElementById("hdrGoalName").textContent=state.profile.goalName;
+  const dot=document.getElementById("keyDot"),kt=document.getElementById("keyStatusText");
+  if(state.apiKey&&state.keyVerified){dot.className="dot d-g";kt.textContent="ИИ активен";}
+  else if(state.apiKey&&state.apiKey.trim().length>10){dot.className="dot d-a";kt.textContent="Проверь ключ";}
+  else{dot.className="dot d-r";kt.textContent="Нет ключа";}
+
+  const tot=getTotals(),tk=state.profile.kcal,tp=state.profile.p,tf=state.profile.f,tc=state.profile.c;
+  document.getElementById("totKcal").textContent=Math.round(tot.kcal);
+  document.getElementById("targetKcal").textContent=tk;
+  const rk=Math.round(tk-tot.kcal),re=document.getElementById("remKcalBig");
+  re.textContent=(rk>=0?rk:"+"+Math.abs(rk))+" ккал";
+  re.className="big "+(rk>=0?"t-em":"t-red");
+  const bar=document.getElementById("kcalBar");
+  bar.style.width=Math.min(100,Math.round((tot.kcal/tk)*100))+"%";
+  bar.className="bar-fg"+(rk<0?" over":"");
+
+  document.getElementById("targetP").textContent=tp;document.getElementById("targetF").textContent=tf;document.getElementById("targetC").textContent=tc;
+  document.getElementById("totP").textContent=Math.round(tot.p);document.getElementById("totF").textContent=Math.round(tot.f);document.getElementById("totC").textContent=Math.round(tot.c);
+  const sb=(id,v)=>{const el=document.getElementById(id),r=Math.round(v);el.textContent=r>=0?`ост: ${r} г`:`+${Math.abs(r)} г`;el.className="xxs "+(r>=0?"t-em":"t-amb");};
+  sb("remP",tp-tot.p);sb("remF",tf-tot.f);sb("remC",tc-tot.c);
+  renderRecentChips();renderMeals();
+}
+
+function renderMeals(){
+  let rk=0,rp=0,rf=0,rc=0;
+  document.getElementById("mealsContainer").innerHTML=MEAL_TYPES.map(m=>{
+    const items=state.today.items.filter(i=>i.meal===m.id);
+    let mk=0,mp=0,mf=0,mc=0;
+    const rows=items.map(it=>{
+      const k=Number(it.kcal)||0,p=Number(it.p)||0,f=Number(it.f)||0,c=Number(it.c)||0;
+      mk+=k;mp+=p;mf+=f;mc+=c;rk+=k;rp+=p;rf+=f;rc+=c;
+      return `<div class="i-row" onclick="openEditItemModal('${it.id}')"><div><div class="xs">${escapeHtml(it.name)} <span class="t-dim" style="font-size:10px">✎</span></div></div><div style="text-align:right"><div class="xs b">${Math.round(k)} ккал</div><div class="xxs t-mut">Б:${Math.round(p)} Ж:${Math.round(f)} У:${Math.round(c)}</div>${state.showItemRemainder?`<div class="t-em" style="font-size:10px">Ост: ${Math.round(state.profile.kcal-rk)} ккал</div>`:""}</div><div onclick="event.stopPropagation();deleteItem('${it.id}')"><button class="t-dim" style="padding:4px">✕</button></div></div>`;
+    }).join("");
+    const srk=Math.round(state.profile.kcal-rk);
+    return `<div class="card" style="overflow:hidden"><div class="m-hdr"><span class="xs b">${m.title}</span><span class="xs b t-blu">${Math.round(mk)} ккал <span class="t-mut" style="font-weight:400">(Б:${Math.round(mp)} Ж:${Math.round(mf)} У:${Math.round(mc)})</span></span></div>${items.length?rows:'<div class="xs t-dim" style="padding:10px 12px;font-style:italic">Пока пусто</div>'}${items.length?`<div class="m-ftr"><span class="t-mut">С утра: <b style="color:#fff">${Math.round(rk)} ккал</b></span><span class="${srk>=0?'t-em':'t-red'} b">Ост: ${srk} ккал (Б:${Math.round(state.profile.p-rp)} Ж:${Math.round(state.profile.f-rf)} У:${Math.round(state.profile.c-rc)})</span></div>`:""}</div>`;
+  }).join("");
+}
+
+function openEditItemModal(id){
+  const it=state.today.items.find(i=>i.id===id);if(!it)return;
+  editOriginalItem={...it};
+  document.getElementById("editItemId").value=it.id;
+  document.getElementById("editItemName").value=it.name;
+  document.getElementById("editItemKcal").value=Math.round(it.kcal);
+  document.getElementById("editItemP").value=Math.round(it.p);
+  document.getElementById("editItemF").value=Math.round(it.f);
+  document.getElementById("editItemC").value=Math.round(it.c);
+  document.getElementById("editItemMeal").value=it.meal;
+  const wm=it.name.match(/(\d+)\s*(г|гр|мл|шт)/i);
+  document.getElementById("editBaseWeight").value=wm?Number(wm[1]):100;
+  document.getElementById("editNewWeight").value="";
+  openModal("editItemModal");
+}
+function recalcEditByWeight(){
+  if(!editOriginalItem)return;
+  const bw=Number(document.getElementById("editBaseWeight").value),nw=Number(document.getElementById("editNewWeight").value);
+  if(!bw||!nw||bw<=0||nw<=0)return;
+  const r=nw/bw;
+  document.getElementById("editItemKcal").value=Math.round(editOriginalItem.kcal*r);
+  document.getElementById("editItemP").value=Math.round(editOriginalItem.p*r);
+  document.getElementById("editItemF").value=Math.round(editOriginalItem.f*r);
+  document.getElementById("editItemC").value=Math.round(editOriginalItem.c*r);
+  const cn=editOriginalItem.name;
+  document.getElementById("editItemName").value=/(\d+)\s*(г|гр|мл|шт)/i.test(cn)?cn.replace(/(\d+)(\s*(?:г|гр|мл|шт))/i,`${nw}$2`):`${cn} (${nw} г)`;
+}
+function saveEditedItem(){
+  const id=document.getElementById("editItemId").value,idx=state.today.items.findIndex(i=>i.id===id);if(idx===-1)return;
+  const u={...state.today.items[idx],name:document.getElementById("editItemName").value.trim()||"Продукт",kcal:Math.round(Number(document.getElementById("editItemKcal").value)||0),p:Math.round(Number(document.getElementById("editItemP").value)||0),f:Math.round(Number(document.getElementById("editItemF").value)||0),c:Math.round(Number(document.getElementById("editItemC").value)||0),meal:document.getElementById("editItemMeal").value};
+  state.today.items[idx]=u;rememberInDictionary(u);saveState();renderDashboardAndMeals();closeModal("editItemModal");showToast("Обновлено!");
+}
+function deleteFromEditModal(){deleteItem(document.getElementById("editItemId").value);closeModal("editItemModal");}
+function deleteItem(id){state.today.items=state.today.items.filter(i=>i.id!==id);saveState();renderDashboardAndMeals();}
+
+function handlePhotoSelect(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    const img=new Image();
+    img.onload=()=>{
+      const c=document.createElement("canvas"),M=900;let w=img.width,h=img.height;
+      if(w>h&&w>M){h*=M/w;w=M;}else if(h>M){w*=M/h;h=M;}
+      c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);
+      const u=c.toDataURL("image/jpeg",.78);attachedPhotoBase64=u.split(",")[1];
+      document.getElementById("photoPreviewImg").src=u;document.getElementById("photoPreviewBox").classList.remove("hidden");
+    };img.src=ev.target.result;
+  };r.readAsDataURL(f);
+}
+function clearPhoto(){attachedPhotoBase64=null;document.getElementById("photoInput").value="";document.getElementById("photoPreviewBox").classList.add("hidden");}
+
+async function fetchAvailableModels(key){
+  const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key.trim()}`),d=await res.json();
+  if(!res.ok)throw new Error(d?.error?.message||`HTTP ${res.status}`);
+  const l=(d.models||[]).filter(m=>(m.supportedGenerationMethods||[]).includes("generateContent")&&m.name.includes("gemini")&&!/(tts|image|embedding|aqa|audio|robotics|computer|veo|imagen|learnlm)/i.test(m.name)).map(m=>m.name.replace("models/",""));
+  l.sort((a,b)=>{const s=n=>(n.includes("flash")?100:0)+(!n.includes("lite")&&!n.includes("8b")?25:0)+(n.includes("2.5")?35:0)+(n.includes("2.0")?20:0);return s(b)-s(a);});
+  if(!l.length)throw new Error("Модели не найдены");
+  return l;
+}
+async function runGeminiRequest(parts,key){
+  if(!state.availableModels?.length){state.availableModels=await fetchAvailableModels(key);state.selectedModel=state.availableModels[0];saveState();}
+  const cands=[state.selectedModel,...state.availableModels.filter(m=>m!==state.selectedModel)].filter(Boolean).slice(0,4);
+  let err="";
+  for(const m of cands){
+    try{
+      const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${key.trim()}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts}],generationConfig:{temperature:0.2}})});
+      const d=await r.json();if(!r.ok)throw new Error(d?.error?.message||`HTTP ${r.status}`);
+      const t=d.candidates?.[0]?.content?.parts?.[0]?.text||"",mt=t.match(/\{[\s\S]*\}/);
+      if(!mt)throw new Error("Неверный ответ ИИ");
+      state.selectedModel=m;state.keyVerified=true;saveState();return JSON.parse(mt[0]);
+    }catch(e){if(!err)err=e.message;}
+  }
+  throw new Error(err||"Ошибка Gemini API");
+}
+async function callGeminiAPI(txt,img,key){
+  const mem=getMemoryItems().slice(0,18).map(i=>`${i.name}->${i.kcal}ккал(Б:${i.p},Ж:${i.f},У:${i.c})`).join("; ");
+  const parts=[{text:`Ты калькулятор КБЖУ. Рассчитай КБЖУ и обязательно укажи вес в граммах в названии (например "Котлеты куриные 3 шт (180 г)"). ${mem?"Память прошлых блюд: "+mem:""} Верни ТОЛЬКО JSON: {"items":[{"name":"Название (150 г)","kcal":250,"p":25,"f":12,"c":10}]} Запрос: ${txt||"Фото"}`}];
+  if(img)parts.push({inline_data:{mime_type:"image/jpeg",data:img}});
+  return await runGeminiRequest(parts,key);
+}
+async function addFoodWithAI(){
+  const txt=document.getElementById("foodInput").value.trim(),eb=document.getElementById("aiErrorBox");eb.classList.add("hidden");
+  if(!state.apiKey||state.apiKey.trim().length<10){openModal("settingsModal");return;}
+  if(!txt&&!attachedPhotoBase64){eb.textContent="Напиши, что съел, или прикрепи фото.";eb.classList.remove("hidden");return;}
+  const btn=document.getElementById("addAiBtn"),bt=document.getElementById("addBtnText");btn.disabled=true;bt.textContent="⏳ Считаю...";
+  try{
+    const res=await callGeminiAPI(txt,attachedPhotoBase64,state.apiKey);
+    (res?.items||[]).forEach(it=>{
+      const n={id:"id_"+Date.now()+"_"+Math.random().toString(36).slice(2,5),meal:state.currentMeal,name:it.name||txt,kcal:Math.round(Number(it.kcal)||0),p:Math.round(Number(it.p)||0),f:Math.round(Number(it.f)||0),c:Math.round(Number(it.c)||0)};
+      state.today.items.push(n);rememberInDictionary(n);
+    });
+    document.getElementById("foodInput").value="";clearPhoto();saveState();renderDashboardAndMeals();showToast("Добавлено!");
+  }catch(e){eb.textContent="Ошибка: "+e.message;eb.classList.remove("hidden");}
+  finally{btn.disabled=false;bt.textContent="✨ Посчитать";}
+}
+async function suggestMealsWithAI(){
+  if(!state.apiKey||state.apiKey.trim().length<10){openModal("settingsModal");return;}
+  const tot=getTotals(),rk=Math.max(0,Math.round(state.profile.kcal-tot.kcal)),rp=Math.max(0,Math.round(state.profile.p-tot.p)),rf=Math.max(0,Math.round(state.profile.f-tot.f)),rc=Math.max(0,Math.round(state.profile.c-tot.c));
+  const mem=getMemoryItems().slice(0,20).map(i=>i.name).join(", "),btn=document.getElementById("suggestBtn"),bt=document.getElementById("suggestBtnText");
+  btn.disabled=true;bt.textContent="⏳ Думаю...";
+  try{
+    const res=await runGeminiRequest([{text:`Подбери 3 варианта еды под остаток: ${rk} ккал, Б:${rp}г, Ж:${rf}г, У:${rc}г. Привычные продукты: ${mem||"курица, яйца, творог, гречка, ветчина, овощи"}. Верни ТОЛЬКО JSON: {"suggestions":[{"name":"Название (вес)","note":"почему подходит","kcal":300,"p":30,"f":10,"c":20}]}`}],state.apiKey);
+    if(res?.suggestions){
+      window._sugs=res.suggestions;document.getElementById("suggestionsBox").classList.remove("hidden");
+      document.getElementById("suggestionsList").innerHTML=res.suggestions.map((s,i)=>`<div class="row-sb" style="background:#1e293b;padding:8px;border-radius:9px;gap:8px"><div><div class="xs b">${escapeHtml(s.name)}</div><div class="xxs t-mut">${Math.round(s.kcal)} ккал • Б:${Math.round(s.p)} Ж:${Math.round(s.f)} У:${Math.round(s.c)}</div></div><button onclick="addSug(${i})" class="btn b-pri" style="padding:6px 10px">+ Взять</button></div>`).join("");
+    }
+  }catch(e){alert("Ошибка: "+e.message);}finally{btn.disabled=false;bt.textContent="💡 Что съесть?";}
+}
+function addSug(i){const s=(window._sugs||[])[i];if(!s)return;const n={id:"id_"+Date.now(),meal:state.currentMeal,name:s.name,kcal:Math.round(Number(s.kcal)||0),p:Math.round(Number(s.p)||0),f:Math.round(Number(s.f)||0),c:Math.round(Number(s.c)||0)};state.today.items.push(n);rememberInDictionary(n);saveState();renderDashboardAndMeals();showToast("Добавлено!");}
+
+function finishAndCollapseDay(){
+  if(!state.today.items.length){showToast("Сегодня еще нет записей");return;}
+  state.history.unshift({id:"d_"+Date.now(),date:state.today.date,weight:state.profile.weight,targetKcal:state.profile.kcal,totals:getTotals(),items:[...state.today.items]});
+  state.today={date:getTodayStr(),items:[]};saveState();checkDayRollover();renderDashboardAndMeals();renderHistory();showToast("День в архиве!");
+}
+function renderHistory(){
+  const b=document.getElementById("historyContainer");
+  if(!state.history?.length){b.innerHTML='<div class="xs t-dim" style="padding:0 4px">Завершенных дней пока нет.</div>';return;}
+  b.innerHTML=state.history.slice(0,14).map((d,di)=>`<details class="card"><summary class="row-sb" style="padding:11px 12px"><div><div class="xs b">📅 ${d.date} <span class="t-mut" style="font-weight:400">(${d.weight} кг)</span></div><div class="xxs t-mut">Б:${Math.round(d.totals.p)}г • Ж:${Math.round(d.totals.f)}г • У:${Math.round(d.totals.c)}г</div></div><div style="text-align:right"><div class="xs b ${d.targetKcal>=d.totals.kcal?'t-em':'t-amb'}">${Math.round(d.totals.kcal)} / ${d.targetKcal} ккал</div><div class="xxs t-mut">развернуть ▾</div></div></summary><div style="padding:6px 12px 10px;border-top:1px solid #334155">${(d.items||[]).map((it,ii)=>`<div class="row-sb xs" style="padding:5px 0;border-bottom:1px solid rgba(51,65,85,.5)"><span>${escapeHtml(it.name)}</span><button onclick="repHist(${di},${ii})" class="xxs t-sky b" style="background:#334155;padding:2px 7px;border-radius:5px">+ Сегодня</button></div>`).join("")}<div style="text-align:right;margin-top:6px"><button onclick="deleteHistoryDay(${di})" class="xxs t-red">Удалить день</button></div></div></details>`).join("");
+}
+function repHist(di,ii){const it=state.history?.[di]?.items?.[ii];if(!it)return;const n={...it,id:"id_"+Date.now(),meal:it.meal||state.currentMeal};state.today.items.push(n);saveState();renderDashboardAndMeals();showToast("Повторено!");}
+function deleteHistoryDay(di){if(!confirm("Удалить день из архива?"))return;state.history.splice(di,1);saveState();renderHistory();}
+function copyDayForSheets(){const t=getTotals(),r=`${state.today.date}\t${Math.round(t.kcal)}\t${Math.round(t.p)}\t${Math.round(t.f)}\t${Math.round(t.c)}\t${state.profile.weight}\t${state.today.items.map(i=>i.name).join("; ")}`;navigator.clipboard.writeText(r).then(()=>showToast("Скопировано для Таблицы!"));}
+
+function openModal(id){
+  if(id==="goalModal"){document.getElementById("inpWeight").value=state.profile.weight;document.getElementById("inpHeight").value=state.profile.height;document.getElementById("inpAge").value=state.profile.age;document.getElementById("inpKcal").value=state.profile.kcal;document.getElementById("inpP").value=state.profile.p;document.getElementById("inpF").value=state.profile.f;document.getElementById("inpC").value=state.profile.c;document.getElementById("inpGoalName").value=state.profile.goalName;}
+  if(id==="settingsModal"){
+    document.getElementById("inpApiKey").value=state.apiKey||"";document.getElementById("keyTestResult").classList.add("hidden");
+    const raw=localStorage.getItem(STORAGE_KEY)||"";document.getElementById("storageSizeText").textContent=`${((raw.length*2)/1024).toFixed(1)} КБ / 5000 КБ`;
+    const mb=document.getElementById("modelSelectBox"),sel=document.getElementById("selModel");
+    if(state.availableModels?.length){mb.classList.remove("hidden");sel.innerHTML=state.availableModels.map(m=>`<option value="${m}" ${m===state.selectedModel?"selected":""}>${m}</option>`).join("");}else mb.classList.add("hidden");
+  }
+  document.getElementById(id).classList.remove("hidden");
+}
+function closeModal(id){document.getElementById(id).classList.add("hidden");}
+function changeSelectedModel(){state.selectedModel=document.getElementById("selModel").value;saveState();showToast("Модель: "+state.selectedModel);}
+function toggleItemRem(){state.showItemRemainder=document.getElementById("chkShowItemRem").checked;saveState();renderDashboardAndMeals();}
+function applyPreset(t){const m={deficit:[1900,150,75,155,"Дефицит"],soft:[2100,155,80,190,"Мягкий дефицит"],maint:[2400,155,85,250,"Поддержание"]}[t];if(m){document.getElementById("inpKcal").value=m[0];document.getElementById("inpP").value=m[1];document.getElementById("inpF").value=m[2];document.getElementById("inpC").value=m[3];document.getElementById("inpGoalName").value=m[4];}}
+function recalcByFormula(){const w=Number(document.getElementById("inpWeight").value)||99,h=Number(document.getElementById("inpHeight").value)||183,a=Number(document.getElementById("inpAge").value)||43,t=Math.max(1600,Math.round((10*w+6.25*h-5*a+5)*1.25)-500),p=Math.round(w*1.5),f=Math.round(w*0.75);document.getElementById("inpKcal").value=t;document.getElementById("inpP").value=p;document.getElementById("inpF").value=f;document.getElementById("inpC").value=Math.max(100,Math.round((t-p*4-f*9)/4));document.getElementById("inpGoalName").value="Дефицит (авто)";}
+function saveGoalSettings(){state.profile={weight:Number(document.getElementById("inpWeight").value)||99,height:Number(document.getElementById("inpHeight").value)||183,age:Number(document.getElementById("inpAge").value)||43,kcal:Number(document.getElementById("inpKcal").value)||1900,p:Number(document.getElementById("inpP").value)||150,f:Number(document.getElementById("inpF").value)||75,c:Number(document.getElementById("inpC").value)||155,goalName:document.getElementById("inpGoalName").value.trim()||"Дефицит"};saveState();renderDashboardAndMeals();closeModal("goalModal");saveAndTestApiKey();showToast("Сохранено!");}
+
+async function saveAndTestApiKey(){
+  const k=document.getElementById("inpApiKey").value.trim(),rb=document.getElementById("keyTestResult");rb.classList.remove("hidden");
+  if(!k){state.apiKey="";state.keyVerified=false;saveState();renderDashboardAndMeals();rb.textContent="Ключ удален.";return;}
+  rb.className="xs t-mut";rb.textContent="⏳ Проверяю ключ и модели...";
+  try{
+    state.availableModels=await fetchAvailableModels(k);state.selectedModel=state.availableModels[0];state.apiKey=k;
+    await callGeminiAPI("Яблоко 100г",null,k);state.keyVerified=true;saveState();renderDashboardAndMeals();openModal("settingsModal");
+    rb.classList.remove("hidden");rb.className="xs t-em b";rb.textContent="✅ Ключ активен! Модель: "+state.selectedModel;
+  }catch(e){state.apiKey=k;state.keyVerified=false;saveState();renderDashboardAndMeals();rb.className="xs t-red";rb.textContent="❌ Ошибка: "+e.message;}
+}
+async function forceUpdateApp(){showToast("Обновляю...");const u=window.location.pathname+"?v="+Date.now();await fetch(u,{cache:"no-store"});window.location.replace(u);}
+function exportBackup(){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:"application/json"}));a.download="kcal_backup.json";a.click();}
+function importBackup(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{state={...defaultState,...JSON.parse(ev.target.result),version:APP_VERSION};saveState();init();closeModal("settingsModal");showToast("Восстановлено!");}catch(err){alert("Ошибка файла");}};r.readAsText(f);}
+
+function init(){document.getElementById("verBadge").textContent="v"+APP_VERSION;document.getElementById("chkShowItemRem").checked=state.showItemRemainder!==false;checkDayRollover();selectMeal(state.currentMeal||"breakfast");renderDashboardAndMeals();renderHistory();}
+init();
+</script>
+</body>
+</html><!-- КОНЕЦ ФАЙЛА -->
